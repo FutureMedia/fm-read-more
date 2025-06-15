@@ -1,119 +1,124 @@
-(function () {
-    "use strict";
+document.addEventListener("DOMContentLoaded", () => {
+    const CHAR_LIMIT = 300; // Still used to determine if truncation is needed at all
+    const ANIMATION_DURATION = 300;
+    const MAX_HEIGHT_ANIMATION_DURATION = 350;
 
-    document.addEventListener("DOMContentLoaded", function() {
-        // Initialize on page load
-        setupReadMoreFunctionality();
-        
-        // Re-initialize on window resize
-        window.addEventListener('resize', function() {
-            setupReadMoreFunctionality();
-        });
-        
-        function setupReadMoreFunctionality() {
-            const containers = document.querySelectorAll(".fm-read-more-container");
-            
-            containers.forEach(function(container) {
-                const content = container.querySelector(".fm-read-more-content");
-                const button = container.querySelector(".fm-read-more-button");
-                
-                if (!content || !button) return;
-                
-                // Store original text if not already stored
-                if (!content.hasAttribute('data-original-text')) {
-                    content.setAttribute('data-original-text', content.innerHTML);
-                }
-                
-                const originalText = content.getAttribute('data-original-text');
-                
-                // Check if window width is <= 800px
-                if (window.innerWidth <= 800) {
-                    // Apply truncation logic if not already expanded
-                    if (!content.classList.contains("expanded")) {
-                        const truncatedText = truncateToSentence(originalText, 300);
-                        content.innerHTML = truncatedText;
-                        
-                        // Only show button if there's more content
-                        if (truncatedText.length < originalText.length) {
-                            button.style.display = 'inline-flex';
-                        } else {
-                            button.style.display = 'none';
-                        }
-                    }
-                } else {
-                    // On larger screens, show full text and hide button
-                    content.innerHTML = originalText;
-                    content.classList.remove("expanded");
-                    button.style.display = 'none';
-                }
-            });
+    const contentElement = document.querySelector('.entry-content');
+    const button = document.querySelector('.fm-read-more-button');
+
+    if (!contentElement || !button) {
+        if (button) button.style.display = 'none';
+        return;
+    }
+
+    const fullTextHTML = contentElement.innerHTML;
+    const moreText = button.dataset.moreText || 'Read More';
+    const lessText = button.dataset.lessText || 'Read Less';
+    let truncatedHTML = ''; // JS will still prepare a truncated version of the text
+    let isAnimating = false;
+
+    // This function still prepares the truncated text content
+    function createAndStoreTruncatedHTML() {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = fullTextHTML;
+        const textOnly = tempDiv.textContent || tempDiv.innerText || "";
+
+        if (textOnly.length <= CHAR_LIMIT) {
+            truncatedHTML = null;
+            return null;
         }
-        
-        // Function to truncate text at the end of a sentence, closest to the character limit
-        function truncateToSentence(text, limit) {
-            if (text.length <= limit) return text;
-            
-            // Look for sentence endings (.!?) within a reasonable range after the limit
-            const searchRange = text.substring(0, Math.min(limit + 100, text.length));
-            
-            // Find all sentence endings
-            const sentenceEndingMatches = [...searchRange.matchAll(/[.!?]\s/g)];
-            
-            if (sentenceEndingMatches.length > 0) {
-                // Find the last sentence ending that's below or closest to the limit
-                let bestPosition = 0;
-                
-                for (const match of sentenceEndingMatches) {
-                    const position = match.index + 1; // Include the period/ending punctuation
-                    
-                    if (position <= limit) {
-                        bestPosition = position;
-                    } else if (bestPosition === 0) {
-                        // If we haven't found any ending below the limit, use the first one after
-                        bestPosition = position;
-                        break;
-                    } else {
-                        // We already found an ending below the limit and this one is above it
-                        break;
-                    }
-                }
-                
-                if (bestPosition > 0) {
-                    return text.substring(0, bestPosition + 1); // +1 to include the space after sentence
+
+        let cutOffPoint = -1;
+        const sentenceEndings = ['.', '!', '?'];
+        for (let i = CHAR_LIMIT; i < textOnly.length; i++) {
+            if (sentenceEndings.includes(textOnly[i])) {
+                if (i + 1 >= textOnly.length || textOnly[i+1] === ' ' || textOnly[i+1] === '\n') {
+                    cutOffPoint = i + 1;
+                    break;
                 }
             }
-            
-            // Fallback: if no sentence endings found, just truncate at the limit
-            return text.substring(0, limit);
+        }
+
+        if (cutOffPoint === -1) {
+            let extendedLimit = Math.min(textOnly.length, CHAR_LIMIT + 150);
+            let lastSpace = textOnly.substring(0, extendedLimit).lastIndexOf(' ');
+            if (lastSpace > CHAR_LIMIT * 0.7) {
+                cutOffPoint = lastSpace > 0 ? lastSpace : CHAR_LIMIT;
+            } else {
+                cutOffPoint = CHAR_LIMIT;
+            }
         }
         
-        // Add click event listeners to all read more buttons
-        document.querySelectorAll(".fm-read-more-button").forEach(function(button) {
-            button.addEventListener("click", function() {
-                const container = this.closest(".fm-read-more-container");
-                const content = container.querySelector(".fm-read-more-content");
-                
-                if (!content) return;
-                
-                const moreText = this.getAttribute("data-more-text");
-                const lessText = this.getAttribute("data-less-text");
-                const originalText = content.getAttribute('data-original-text');
+        let truncatedText = textOnly.substring(0, cutOffPoint).trim();
+        if (cutOffPoint < textOnly.length && textOnly.length > CHAR_LIMIT) {
+            truncatedText += "...";
+        }
+        
+        if (contentElement.querySelector('p')) {
+            truncatedHTML = `<p>${truncatedText}</p>`;
+        } else {
+            truncatedHTML = truncatedText;
+        }
+        return truncatedHTML;
+    }
 
-                if (content.classList.contains("expanded")) {
-                    if (window.innerWidth <= 800) {
-                        const truncatedText = truncateToSentence(originalText, 300);
-                        content.classList.remove("expanded");
-                        setTimeout(function() {
-                            content.innerHTML = truncatedText;
-                        }, 10); // Small delay to ensure animation works
-                        this.textContent = moreText;
-                    }
+    function updateContentAndButton(expand, animate = true) {
+        if (isAnimating) return;
+        isAnimating = true;
+
+        contentElement.classList.add('is-fading');
+
+        setTimeout(() => {
+            if (expand) {
+                contentElement.innerHTML = fullTextHTML;
+                button.textContent = lessText;
+                contentElement.classList.remove('is-collapsed');
+                contentElement.classList.add('is-expanded');
+                contentElement.style.maxHeight = contentElement.scrollHeight + 'px';
+            } else {
+                if (truncatedHTML) {
+                    contentElement.innerHTML = truncatedHTML;
                 } else {
-                    content.classList.add("expanded");
-                    content.innerHTML = originalText;
-                    this.textContent = lessText;
+                    contentElement.innerHTML = fullTextHTML; // Should not happen if no truncation
                 }
-            });
-        });
+                button.textContent = moreText;
+                contentElement.classList.remove('is-expanded');
+                contentElement.classList.add('is-collapsed');
+                // Clear any inline max-height so CSS (with cqw unit) takes over
+                contentElement.style.maxHeight = '';
+            }
+            contentElement.classList.remove('is-fading');
+            setTimeout(() => isAnimating = false, Math.max(ANIMATION_DURATION, MAX_HEIGHT_ANIMATION_DURATION));
+        }, animate ? ANIMATION_DURATION / 2 : 0);
+    }
+
+    function setViewState(isMobile) {
+        createAndStoreTruncatedHTML(); // Determine if truncation is needed based on CHAR_LIMIT
+
+        if (isMobile && truncatedHTML !== null) { // Truncation is needed
+            contentElement.classList.add('js-fm-read-more-managed');
+            button.classList.add('js-fm-read-more-active');
+            button.style.display = ''; // Let CSS control visibility
+            updateContentAndButton(false, false); // Start collapsed
+        } else { // No truncation needed (desktop or short content on mobile)
+            contentElement.classList.remove('js-fm-read-more-managed', 'is-collapsed');
+            contentElement.classList.add('is-expanded');
+            contentElement.innerHTML = fullTextHTML;
+            contentElement.style.maxHeight = ''; // Ensure no JS max-height
+            button.classList.remove('js-fm-read-more-active');
+            button.style.display = 'none';
+        }
+    }
+
+    button.addEventListener('click', () => {
+        const currentlyExpanded = contentElement.classList.contains('is-expanded');
+        updateContentAndButton(!currentlyExpanded);
     });
-})();
+
+    const mediaQuery = window.matchMedia('(max-width: 800px)');
+    function handleMediaChange(e) {
+        setViewState(e.matches);
+    }
+    mediaQuery.addEventListener('change', handleMediaChange);
+    setViewState(mediaQuery.matches); // Initial check
+});

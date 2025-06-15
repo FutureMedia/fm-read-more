@@ -32,25 +32,6 @@ function fm_read_more_enqueue_scripts() {
 add_action('wp_enqueue_scripts', 'fm_read_more_enqueue_scripts');
 
 /**
- * Add read more functionality to the_content
- */
-function fm_read_more_content_filter($content) {
-    // Only apply to main content in single posts/pages
-    if (!is_singular() || !in_the_loop() || !is_main_query()) {
-        return $content;
-    }
-    
-    // Add the read more button
-    $button = '<button class="fm-read-more-button" data-more-text="Read More" data-less-text="Read Less">Read More</button>';
-    
-    // Wrap the content in our container
-    $output = '<div class="entry-content-container">' . $content . $button . '</div>';
-    
-    return $output;
-}
-add_filter('the_content', 'fm_read_more_content_filter');
-
-/**
  * Shortcode for read more functionality
  */
 function fm_read_more_shortcode($atts, $content = null) {
@@ -63,10 +44,12 @@ function fm_read_more_shortcode($atts, $content = null) {
         'fm_read_more'
     );
 
-    $output = '<div class="fm-read-more-container">';
-    $output .= '<div class="fm-read-more-content">' . do_shortcode($content) . '</div>';
-    $output .= '<button class="fm-read-more-button" data-more-text="' . esc_attr($atts['more_text']) . '" data-less-text="' . esc_attr($atts['less_text']) . '">' . esc_html($atts['more_text']) . '</button>';
-    $output .= '</div>';
+    // The shortcode now only outputs the button.
+    // The $content argument is effectively ignored in this setup.
+    // The JavaScript will need to be updated to find this button
+    // and its adjacent '.entry-content' div.
+    // Added 'fm-read-more-button' for specificity, kept 'toggle-button' for existing JS/CSS.
+    $output = '<button class="toggle-button fm-read-more-button" data-more-text="' . esc_attr($atts['more_text']) . '" data-less-text="' . esc_attr($atts['less_text']) . '">' . esc_html($atts['more_text']) . '</button>';
 
     return $output;
 }
