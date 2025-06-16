@@ -16,9 +16,7 @@ FM Read More allows you to add expandable content sections to your posts and pag
 Use the shortcode `[fm_read_more]` to add read more functionality to your content:
 
 ```
-[fm_read_more more_text="Read More" less_text="Read Less"]
-Your content here...
-[/fm_read_more]
+echo do_shortcode('[fm_read_more]'); 
 ```
 
 ### Shortcode Attributes
