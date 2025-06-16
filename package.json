@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "terser": "^5.42.0"
+  },
+  "scripts": {
+    "minify-js": "terser ./assets/js/scripts.js -o ./assets/js/script.min.js -c -m"
+  }
+}
