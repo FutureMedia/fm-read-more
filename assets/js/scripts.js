@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let extendedLimit = Math.min(textOnly.length, CHAR_LIMIT + 150);
             let lastSpace = textOnly.substring(0, extendedLimit).lastIndexOf(' ');
             if (lastSpace > CHAR_LIMIT * 0.7) {
-                cutOffPoint = lastSpace > 0 ? lastSpace : CHAR_LIMIT;
+                 cutOffPoint = lastSpace > 0 ? lastSpace : CHAR_LIMIT;
             } else {
                 cutOffPoint = CHAR_LIMIT;
             }
@@ -55,9 +55,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         if (contentElement.querySelector('p')) {
-            truncatedHTML = `<p>${truncatedText}</p>`;
+             truncatedHTML = `<p>${truncatedText}</p>`;
         } else {
-            truncatedHTML = truncatedText;
+             truncatedHTML = truncatedText;
         }
         return truncatedHTML;
     }
