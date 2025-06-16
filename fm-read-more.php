@@ -27,7 +27,7 @@ define('FM_READ_MORE_URL', plugin_dir_url(__FILE__));
  */
 function fm_read_more_enqueue_scripts() {
     wp_enqueue_style('fm-read-more', FM_READ_MORE_URL . 'assets/css/style.css', array(), FM_READ_MORE_VERSION);
-    wp_enqueue_script('fm-read-more', FM_READ_MORE_URL . 'assets/js/scripts.js', array(), FM_READ_MORE_VERSION, true);
+    wp_enqueue_script('fm-read-more', FM_READ_MORE_URL . 'assets/js/scripts.min.js', array(), FM_READ_MORE_VERSION, true);
 }
 add_action('wp_enqueue_scripts', 'fm_read_more_enqueue_scripts');
 
